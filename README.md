@@ -1,4 +1,4 @@
-# 📚 BOOK & MOOD
+# BOOK & MOOD
 
 > **LLM 기반 독서 목적·취향 맞춤형 도서 큐레이션 및 TEMI 서가 안내 서비스**
 
