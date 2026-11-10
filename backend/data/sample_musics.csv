@@ -1,0 +1,8 @@
+music_id,title,mood_tags,style,youtube_url,is_instrumental_verified,url_verified,active,priority
+M001,잔잔한 밤의 피아노 선율,"[""위로"", ""따뜻함"", ""평온함""]",피아노,https://www.youtube.com/watch?v=sample_piano_01,true,true,true,10
+M002,햇살 가득한 오후의 어쿠스틱 재즈,"[""활력"", ""유쾌함"", ""설렘""]",재즈,https://www.youtube.com/watch?v=sample_jazz_02,true,true,true,20
+M003,고요한 도서관 앰비언트 사운드,"[""평온함"", ""신비로움"", ""쓸쓸함""]",앰비언트,https://www.youtube.com/watch?v=sample_ambient_03,true,true,true,30
+M004,새로운 시작을 위한 로파이 비트,"[""희망"", ""활력"", ""설렘""]",로파이,https://www.youtube.com/watch?v=sample_lofi_04,true,true,true,40
+M005,비 오는 창가의 첼로와 피아노,"[""위로"", ""쓸쓸함"", ""평온함""]",클래식,https://www.youtube.com/watch?v=sample_cello_05,true,true,true,50
+M006,미스터리한 밤의 시네마틱 연주곡,"[""긴장감"", ""신비로움""]",인스트루멘털,https://www.youtube.com/watch?v=sample_cinema_06,true,true,true,60
+
