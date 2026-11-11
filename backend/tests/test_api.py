@@ -359,24 +359,29 @@ def test_gemini_request_uses_header_and_disables_25_thinking(
             }
             return json.dumps(payload).encode("utf-8")
 
-    def fake_urlopen(req, timeout=8.0):
+    def fake_urlopen(req, timeout=8.0, context=None):
         captured["url"] = req.full_url
         captured["headers"] = dict(req.header_items())
         captured["body"] = json.loads(req.data.decode("utf-8"))
+        captured["context"] = context
         return FakeResponse()
 
     monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
-    test_settings = replace(
+    test_settings_25 = replace(
         main_module.settings,
         llm_provider="gemini",
         llm_api_key="test-key-123",
         llm_model="gemini-2.5-flash",
     )
 
-    items = _call_gemini("test prompt", test_settings)
+    items = _call_gemini("test prompt", test_settings_25)
     assert len(items) == 1
     assert items[0]["book_id"] == "887231"
     assert "key=" not in str(captured["url"])
     headers_lower = {k.lower(): v for k, v in captured["headers"].items()}
     assert headers_lower["x-goog-api-key"] == "test-key-123"
     assert captured["body"]["generationConfig"]["thinkingConfig"]["thinkingBudget"] == 0
+
+    test_settings_35 = replace(test_settings_25, llm_model="gemini-3.5-flash-lite")
+    _call_gemini("test prompt", test_settings_35)
+    assert captured["body"]["generationConfig"]["thinkingConfig"]["thinkingLevel"] == "minimal"

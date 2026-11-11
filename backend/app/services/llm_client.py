@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import ssl
 import urllib.request
 from typing import Any
 
@@ -123,6 +124,15 @@ def _call_mock_llm(
     return results
 
 
+def _build_ssl_context() -> ssl.SSLContext:
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
 def _call_openai(prompt: str, settings: Settings) -> list[dict[str, Any]]:
     url = "https://api.openai.com/v1/chat/completions"
     body = json.dumps(
@@ -143,7 +153,9 @@ def _call_openai(prompt: str, settings: Settings) -> list[dict[str, Any]]:
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=settings.llm_timeout_sec) as resp:
+    with urllib.request.urlopen(
+        req, timeout=settings.llm_timeout_sec, context=_build_ssl_context()
+    ) as resp:
         data = json.loads(resp.read().decode("utf-8"))
     content = data["choices"][0]["message"]["content"]
     parsed = json.loads(content)
@@ -161,8 +173,13 @@ def _call_gemini(prompt: str, settings: Settings) -> list[dict[str, Any]]:
         "temperature": 0.4,
         "responseMimeType": "application/json",
     }
-    if "2.5" in settings.llm_model:
+    model_name = settings.llm_model.lower()
+    if "2.5" in model_name:
         generation_config["thinkingConfig"] = {"thinkingBudget": 0}
+    elif "3.8" in model_name or "3.7" in model_name:
+        generation_config["thinkingConfig"] = {"thinkingLevel": "low"}
+    elif "gemini-3" in model_name or "flash-latest" in model_name or "flash-lite-latest" in model_name:
+        generation_config["thinkingConfig"] = {"thinkingLevel": "minimal"}
 
     body = json.dumps(
         {
@@ -180,7 +197,9 @@ def _call_gemini(prompt: str, settings: Settings) -> list[dict[str, Any]]:
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=settings.llm_timeout_sec) as resp:
+    with urllib.request.urlopen(
+        req, timeout=settings.llm_timeout_sec, context=_build_ssl_context()
+    ) as resp:
         data = json.loads(resp.read().decode("utf-8"))
     content = data["candidates"][0]["content"]["parts"][0]["text"]
     parsed = json.loads(content)

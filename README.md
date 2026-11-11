@@ -119,5 +119,5 @@ pytest
 ```env
 LLM_PROVIDER=gemini          # mock | openai | gemini
 LLM_API_KEY=your_api_key_here
-LLM_MODEL=gemini-2.5-flash
+LLM_MODEL=gemini-3.5-flash-lite
 ```
