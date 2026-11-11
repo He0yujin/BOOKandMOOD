@@ -147,34 +147,45 @@ def _call_openai(prompt: str, settings: Settings) -> list[dict[str, Any]]:
         data = json.loads(resp.read().decode("utf-8"))
     content = data["choices"][0]["message"]["content"]
     parsed = json.loads(content)
+    if isinstance(parsed, list):
+        return parsed
     return parsed.get("recommendations", [])
 
 
 def _call_gemini(prompt: str, settings: Settings) -> list[dict[str, Any]]:
     url = (
         f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{settings.llm_model}:generateContent?key={settings.llm_api_key}"
+        f"{settings.llm_model}:generateContent"
     )
+    generation_config: dict[str, Any] = {
+        "temperature": 0.4,
+        "responseMimeType": "application/json",
+    }
+    if "2.5" in settings.llm_model:
+        generation_config["thinkingConfig"] = {"thinkingBudget": 0}
+
     body = json.dumps(
         {
             "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {
-                "temperature": 0.4,
-                "responseMimeType": "application/json",
-            },
+            "generationConfig": generation_config,
         }
     ).encode("utf-8")
 
     req = urllib.request.Request(
         url,
         data=body,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "x-goog-api-key": settings.llm_api_key,
+        },
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=settings.llm_timeout_sec) as resp:
         data = json.loads(resp.read().decode("utf-8"))
     content = data["candidates"][0]["content"]["parts"][0]["text"]
     parsed = json.loads(content)
+    if isinstance(parsed, list):
+        return parsed
     return parsed.get("recommendations", [])
 
 

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
 import sys
+import urllib.request
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -12,7 +15,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 import app.main as main_module
 from app.db.database import Database
 from app.models import ScoredCandidate
-from app.services.llm_client import validate_llm_items
+from app.services.llm_client import _call_gemini, validate_llm_items
 from scripts.export_logs import export_table_csv
 from scripts.seed_db import load_books_from_csv, load_musics_from_csv
 
@@ -25,6 +28,11 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     test_db.upsert_books(books)
     test_db.upsert_musics(musics)
     monkeypatch.setattr(main_module, "db", test_db)
+    monkeypatch.setattr(
+        main_module,
+        "settings",
+        replace(main_module.settings, llm_provider="mock", llm_api_key=""),
+    )
     return TestClient(main_module.app)
 
 
@@ -306,3 +314,69 @@ def test_bool_depth_rejected_as_invalid_input(client: TestClient) -> None:
     )
     assert res.status_code == 400
     assert res.json()["error"]["code"] == "INVALID_INPUT"
+
+
+def test_openapi_schema_includes_swagger_examples(client: TestClient) -> None:
+    schema = client.get("/openapi.json").json()
+    rec_example = schema["components"]["schemas"]["RecommendationBody"]["example"]
+    assert rec_example["answers"]["goal"] == "refresh"
+    assert rec_example["answers"]["depth"] == 1
+
+
+def test_gemini_request_uses_header_and_disables_25_thinking(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self) -> bytes:
+            payload = {
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": json.dumps(
+                                        [
+                                            {
+                                                "book_id": "887231",
+                                                "reason": "차분하게 마음을 다독여 주는 따뜻한 이야기예요.",
+                                            }
+                                        ],
+                                        ensure_ascii=False,
+                                    )
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+            return json.dumps(payload).encode("utf-8")
+
+    def fake_urlopen(req, timeout=8.0):
+        captured["url"] = req.full_url
+        captured["headers"] = dict(req.header_items())
+        captured["body"] = json.loads(req.data.decode("utf-8"))
+        return FakeResponse()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    test_settings = replace(
+        main_module.settings,
+        llm_provider="gemini",
+        llm_api_key="test-key-123",
+        llm_model="gemini-2.5-flash",
+    )
+
+    items = _call_gemini("test prompt", test_settings)
+    assert len(items) == 1
+    assert items[0]["book_id"] == "887231"
+    assert "key=" not in str(captured["url"])
+    headers_lower = {k.lower(): v for k, v in captured["headers"].items()}
+    assert headers_lower["x-goog-api-key"] == "test-key-123"
+    assert captured["body"]["generationConfig"]["thinkingConfig"]["thinkingBudget"] == 0

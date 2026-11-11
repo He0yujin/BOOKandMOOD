@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 from pathlib import Path
 from typing import Any
@@ -10,7 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import Settings
 from app.db.database import Database
@@ -31,6 +32,7 @@ from app.services.recommender import (
 
 settings = Settings.from_env()
 db = Database(settings.database_path)
+logger = logging.getLogger("bookmood.api")
 
 app = FastAPI(
     title="BOOK & MOOD API",
@@ -51,6 +53,22 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 class RecommendationBody(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "session_id": "demo-session-001",
+                "answers": {
+                    "goal": "refresh",
+                    "genre": "fiction",
+                    "depth": 1,
+                },
+                "exclude_book_ids": [],
+                "feedback_type": None,
+                "allow_goal_relaxation": False,
+            }
+        }
+    )
+
     session_id: str = Field(..., min_length=1)
     answers: dict[str, Any]
     exclude_book_ids: list[str] = Field(default_factory=list)
@@ -59,6 +77,18 @@ class RecommendationBody(BaseModel):
 
 
 class EventBody(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "session_id": "demo-session-001",
+                "event_type": "book_selected",
+                "book_id": "887231",
+                "music_id": None,
+                "metadata": {},
+            }
+        }
+    )
+
     session_id: str = Field(..., min_length=1)
     event_type: str
     book_id: str | None = None
@@ -67,6 +97,19 @@ class EventBody(BaseModel):
 
 
 class EvaluationBody(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "session_id": "demo-session-001",
+                "top3_satisfied": True,
+                "reason_score": 5,
+                "music_helpful_score": 4,
+                "usability_score": 5,
+                "used_rerecommend": False,
+            }
+        }
+    )
+
     session_id: str = Field(..., min_length=1)
     top3_satisfied: bool
     reason_score: int = Field(..., ge=1, le=5)
@@ -126,7 +169,8 @@ def create_recommendations(body: RecommendationBody) -> dict[str, Any]:
         items = recommend_with_llm(answers, candidates, settings)
         source = "llm"
         error_code = None
-    except Exception:
+    except Exception as exc:
+        logger.warning("LLM recommendation failed; using fallback: %s", exc)
         items = build_fallback_recommendations(candidates)
         source = "fallback"
         error_code = "MODEL_UNAVAILABLE"
