@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app.config import Settings
@@ -41,6 +45,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+(STATIC_DIR / "covers").mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
 
 class RecommendationBody(BaseModel):
     session_id: str = Field(..., min_length=1)
@@ -70,6 +78,21 @@ class EvaluationBody(BaseModel):
 @app.exception_handler(RecommendationError)
 async def handle_recommendation_error(_, exc: RecommendationError) -> JSONResponse:
     return JSONResponse(status_code=exc.http_status, content=exc.to_error_response())
+
+
+@app.exception_handler(RequestValidationError)
+async def handle_validation_error(_, exc: RequestValidationError) -> JSONResponse:
+    return JSONResponse(
+        status_code=400,
+        content={
+            "status": "error",
+            "error": {
+                "code": "INVALID_INPUT",
+                "message": "요청 데이터 형식이 올바르지 않습니다.",
+                "details": {"errors": jsonable_encoder(exc.errors())},
+            },
+        },
+    )
 
 
 @app.get("/health")

@@ -90,6 +90,9 @@ def validate_llm_items(
             raise ValueError(f"중복된 book_id 반환: {book_id}")
         if not (15 <= len(reason) <= 130):
             raise ValueError(f"추천 이유 길이 부적절 ({len(reason)}자)")
+        lowered_reason = reason.lower()
+        if any(token in lowered_reason for token in ("http://", "https://", "youtu.be", "youtube.com")):
+            raise ValueError("추천 이유에 허용되지 않은 URL이 포함되어 있습니다.")
 
         seen_ids.add(book_id)
         validated.append(

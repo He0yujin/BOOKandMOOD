@@ -31,6 +31,9 @@ def validate_answers(
     if genre not in VALID_QUERY_GENRES:
         raise RecommendationError("INVALID_INPUT", f"허용되지 않은 genre 값입니다: {genre}")
 
+    if isinstance(raw_depth, bool):
+        raise RecommendationError("INVALID_INPUT", f"허용되지 않은 depth 값입니다: {raw_depth}")
+
     try:
         depth = int(raw_depth)
     except (TypeError, ValueError):

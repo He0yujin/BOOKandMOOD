@@ -6,6 +6,7 @@ venv/
 .pytest_cache/
 backend/.env
 backend/data/*.db
+backend/exports/
 
 # Android Studio / Gradle
 .gradle/
