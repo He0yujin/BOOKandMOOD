@@ -54,6 +54,7 @@ def load_books_from_csv(csv_path: Path, dev_activate: bool = False) -> list[Book
                     author=row["author"].strip(),
                     genre=row["genre"].strip(),
                     summary=row["summary"].strip(),
+                    short_summary=(row.get("short_summary") or "").strip(),
                     themes=parse_list(row["themes"]),
                     mood_tags=parse_list(row["mood_tags"]),
                     goal_tags=parse_list(row["goal_tags"]),

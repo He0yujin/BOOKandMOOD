@@ -57,6 +57,7 @@ class Database:
                     author TEXT NOT NULL,
                     genre TEXT NOT NULL,
                     summary TEXT NOT NULL,
+                    short_summary TEXT NOT NULL DEFAULT '',
                     themes_json TEXT NOT NULL,
                     mood_tags_json TEXT NOT NULL,
                     goal_tags_json TEXT NOT NULL,
@@ -124,6 +125,13 @@ class Database:
                 );
                 """
             )
+            book_columns = {
+                row["name"] for row in conn.execute("PRAGMA table_info(books)").fetchall()
+            }
+            if "short_summary" not in book_columns:
+                conn.execute(
+                    "ALTER TABLE books ADD COLUMN short_summary TEXT NOT NULL DEFAULT ''"
+                )
 
     def upsert_books(self, books: list[Book]) -> int:
         now = _utc_now_iso()
@@ -132,17 +140,18 @@ class Database:
                 conn.execute(
                     """
                     INSERT INTO books (
-                        book_id, title, author, genre, summary,
+                        book_id, title, author, genre, summary, short_summary,
                         themes_json, mood_tags_json, goal_tags_json,
                         depth, depth_reason, page_count,
                         call_number, shelf_label, poi_id, cover_path,
                         holding_verified, navigation_verified, active, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(book_id) DO UPDATE SET
                         title = excluded.title,
                         author = excluded.author,
                         genre = excluded.genre,
                         summary = excluded.summary,
+                        short_summary = excluded.short_summary,
                         themes_json = excluded.themes_json,
                         mood_tags_json = excluded.mood_tags_json,
                         goal_tags_json = excluded.goal_tags_json,
@@ -164,6 +173,7 @@ class Database:
                         book.author,
                         book.genre,
                         book.summary,
+                        book.short_summary,
                         json.dumps(book.themes, ensure_ascii=False),
                         json.dumps(book.mood_tags, ensure_ascii=False),
                         json.dumps(book.goal_tags, ensure_ascii=False),
@@ -226,6 +236,7 @@ class Database:
             author=row["author"],
             genre=row["genre"],
             summary=row["summary"],
+            short_summary=row["short_summary"] or "",
             themes=json.loads(row["themes_json"]),
             mood_tags=json.loads(row["mood_tags_json"]),
             goal_tags=json.loads(row["goal_tags_json"]),

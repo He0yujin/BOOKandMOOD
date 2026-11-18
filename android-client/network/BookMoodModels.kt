@@ -24,6 +24,7 @@ data class BookSummaryDto(
     @SerializedName("author") val author: String,
     @SerializedName("genre") val genre: String,
     @SerializedName("depth") val depth: Int,
+    @SerializedName("short_summary") val shortSummary: String = "",
     @SerializedName("cover_path") val coverPath: String
 )
 
@@ -48,6 +49,7 @@ data class BookDetailDto(
     @SerializedName("author") val author: String,
     @SerializedName("genre") val genre: String,
     @SerializedName("summary") val summary: String,
+    @SerializedName("short_summary") val shortSummary: String = "",
     @SerializedName("themes") val themes: List<String>,
     @SerializedName("mood_tags") val moodTags: List<String>,
     @SerializedName("goal_tags") val goalTags: List<String>,

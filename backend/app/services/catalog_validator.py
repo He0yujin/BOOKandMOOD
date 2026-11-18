@@ -32,6 +32,10 @@ def validate_books_catalog(books: list[Book]) -> list[str]:
             )
         if not b.summary.strip():
             errors.append(f"{prefix} summary가 비어 있습니다.")
+        if b.short_summary.strip() and len(b.short_summary.strip()) > 100:
+            errors.append(
+                f"{prefix} short_summary는 100자 이내여야 합니다 (현재 {len(b.short_summary.strip())}자)."
+            )
         if not b.themes:
             errors.append(f"{prefix} themes가 최소 1개 이상 필요합니다.")
 

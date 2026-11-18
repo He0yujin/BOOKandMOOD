@@ -21,9 +21,9 @@ GOAL_LABELS = {
 }
 
 GENRE_LABELS = {
-    "fiction": "이야기에 빠져드는 소설",
-    "essay": "공감할 수 있는 에세이",
-    "humanities": "생각을 넓히는 인문·교양",
+    "fiction": "소설",
+    "essay": "에세이",
+    "humanities": "인문·교양",
     "any": "상관없어요",
 }
 
@@ -56,7 +56,9 @@ def build_prompt(answers: SurveyAnswers, candidates: list[ScoredCandidate]) -> s
         "[규칙]\n"
         "1. 반드시 후보 목록의 book_id만 사용하세요.\n"
         "2. 서로 다른 3권을 선택하세요.\n"
-        "3. 추천 이유(reason)는 각 책의 실제 summary·themes에만 근거하여 한국어 60~100자 이내의 친근한 해요체로 작성하세요.\n"
+        "3. 추천 이유(reason)는 한 줄 줄거리와 별도로 노출되므로, 줄거리를 단순 반복하지 말고 "
+        "각 책의 실제 summary·themes·mood_tags에 근거해 왜 지금 사용자 문진에 잘 맞는지 "
+        "한국어 50~90자 이내의 친근한 해요체 1문장으로 작성하세요.\n"
         "4. 줄거리에 없는 사실, 청구기호, URL, 이동 명령은 절대 생성하지 마세요.\n"
         "5. 반드시 아래 JSON 형식으로만 응답하세요.\n"
         '{"recommendations":[{"book_id":"...","reason":"..."}]}\n\n'

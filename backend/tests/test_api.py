@@ -14,7 +14,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 import app.main as main_module
 from app.db.database import Database
-from app.models import ScoredCandidate
+from app.models import Book, ScoredCandidate
 from app.services.llm_client import _call_gemini, validate_llm_items
 from scripts.export_logs import export_table_csv
 from scripts.seed_db import load_books_from_csv, load_musics_from_csv
@@ -385,3 +385,86 @@ def test_gemini_request_uses_header_and_disables_25_thinking(
     test_settings_35 = replace(test_settings_25, llm_model="gemini-3.5-flash-lite")
     _call_gemini("test prompt", test_settings_35)
     assert captured["body"]["generationConfig"]["thinkingConfig"]["thinkingLevel"] == "minimal"
+
+
+def test_short_summary_in_recommendations_detail_and_migration(
+    client: TestClient, tmp_path: Path
+):
+    # 1) Explicit short_summary saved in DB appears in both /recommendations and /books/{id}
+    book_with_short = Book(
+        book_id="SHORT01",
+        title="한줄요약 테스트 도서",
+        author="테스트 저자",
+        genre="fiction",
+        summary="첫 번째 문장입니다. 두 번째 문장은 더 깁니다.",
+        short_summary="사전 저장된 깔끔한 한 줄 줄거리예요.",
+        themes=["테스트"],
+        mood_tags=["따뜻함", "위로"],
+        goal_tags=["comfort"],
+        depth=1,
+        depth_reason="테스트용 단편",
+        page_count=180,
+        call_number="813.7 ㅌ111ㅎ",
+        shelf_label="813번대 서가",
+        poi_id="SHELF_813",
+        holding_verified=True,
+        navigation_verified=True,
+        active=True,
+    )
+    main_module.db.upsert_books([book_with_short])
+
+    detail_res = client.get("/v1/books/SHORT01")
+    assert detail_res.status_code == 200
+    assert detail_res.json()["book"]["short_summary"] == "사전 저장된 깔끔한 한 줄 줄거리예요."
+
+    # 2) Recommendation response includes short_summary (falling back to first sentence when empty)
+    rec_res = client.post(
+        "/v1/recommendations",
+        json={
+            "session_id": "sess-short-summary",
+            "answers": {"goal": "comfort", "genre": "fiction", "depth": 1},
+            "exclude_book_ids": [],
+        },
+    )
+    assert rec_res.status_code == 200
+    for item in rec_res.json()["recommendations"]:
+        assert item["book"]["short_summary"].strip() != ""
+
+    # 3) Legacy SQLite DB without short_summary column migrates automatically
+    import sqlite3
+
+    legacy_db_path = tmp_path / "legacy.db"
+    conn = sqlite3.connect(legacy_db_path)
+    conn.execute(
+        """
+        CREATE TABLE books (
+            book_id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            author TEXT NOT NULL,
+            genre TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            themes_json TEXT NOT NULL,
+            mood_tags_json TEXT NOT NULL,
+            goal_tags_json TEXT NOT NULL,
+            depth INTEGER NOT NULL,
+            depth_reason TEXT NOT NULL,
+            page_count INTEGER,
+            call_number TEXT NOT NULL DEFAULT '',
+            shelf_label TEXT NOT NULL DEFAULT '',
+            poi_id TEXT NOT NULL DEFAULT '',
+            cover_path TEXT NOT NULL DEFAULT '',
+            holding_verified INTEGER NOT NULL DEFAULT 0,
+            navigation_verified INTEGER NOT NULL DEFAULT 0,
+            active INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    migrated_db = Database(legacy_db_path)
+    migrated_db.upsert_books([book_with_short])
+    loaded = migrated_db.get_book("SHORT01")
+    assert loaded is not None
+    assert loaded.short_summary == "사전 저장된 깔끔한 한 줄 줄거리예요."

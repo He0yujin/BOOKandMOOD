@@ -61,6 +61,7 @@ class Book:
     goal_tags: list[str]
     depth: int
     depth_reason: str
+    short_summary: str = ""
     page_count: int | None = None
     call_number: str = ""
     shelf_label: str = ""
@@ -69,6 +70,18 @@ class Book:
     holding_verified: bool = False
     navigation_verified: bool = False
     active: bool = False
+
+    def effective_short_summary(self) -> str:
+        text = " ".join(self.short_summary.split())
+        if text:
+            return text
+        fallback = " ".join(self.summary.split())
+        if not fallback:
+            return ""
+        dot_idx = fallback.find(".")
+        if 0 < dot_idx <= 90:
+            return fallback[: dot_idx + 1]
+        return fallback[:80]
 
     def is_recommendable(self) -> bool:
         return (
@@ -85,6 +98,7 @@ class Book:
             "author": self.author,
             "genre": self.genre,
             "depth": self.depth,
+            "short_summary": self.effective_short_summary(),
             "cover_path": self.cover_path,
         }
 
@@ -95,6 +109,7 @@ class Book:
             "author": self.author,
             "genre": self.genre,
             "summary": self.summary,
+            "short_summary": self.effective_short_summary(),
             "themes": list(self.themes),
             "mood_tags": list(self.mood_tags),
             "goal_tags": list(self.goal_tags),
