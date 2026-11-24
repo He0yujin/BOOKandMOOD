@@ -76,45 +76,78 @@ BOOKandMOOD/
 │   │       ├── recommender.py      # 규칙 기반 점수 계산 · 후보 추출 · 음악 매칭
 │   │       └── llm_client.py       # LLM(Mock / OpenAI / Gemini) 호출 · 검증 · 폴백
 │   ├── data/
-│   │   ├── sample_books_48.csv     # 개발용 48권 샘플 도서 데이터
-│   │   └── sample_musics.csv       # 샘플 연주곡 플레이리스트 6개
+│   │   ├── books.csv               # 실물 검증 완료 도서 데이터 (48권 최종본)
+│   │   ├── musics.csv              # 연주곡 플레이리스트 데이터 (7곡 최종본)
+│   │   └── bookmood.db             # 시딩 완료된 SQLite 데이터베이스
+│   ├── static/
+│   │   ├── covers/                 # 48권 도서 표지 이미지 ({book_id}.jpg)
+│   │   └── qr/                     # 7곡 음악 유튜브 QR 이미지 ({music_id}.png)
 │   ├── scripts/seed_db.py          # CSV → SQLite DB 적재 스크립트
-│   ├── tests/test_api.py           # pytest API 자동 테스트
+│   ├── tests/
+│   │   ├── test_api.py             # 백엔드 API 단위 테스트 (15개)
+│   │   └── test_android_flow.py    # 안드로이드 전체 E2E 연동 테스트 (1개)
 │   ├── requirements.txt
 │   └── .env.example
-├── android-client/                 # TEMI Android 앱 연동용 Kotlin Retrofit2 클라이언트 키트
-│   ├── Android(Kotlin) 백엔드 API 연동 가이드.md  # Android Studio 연동 가이드
-│   └── network/
-│       ├── BookMoodModels.kt       # 요청/응답 DTO
-│       ├── BookMoodApiService.kt   # Retrofit2 API 인터페이스
-│       └── BookMoodClient.kt       # 네트워크 호출 및 오류 파싱 래퍼
-├── BOOK & MOOD 도서DB_기분전환_12권.csv
-├── BOOK & MOOD 최종기획서 .md
-├── BOOK & MOOD 개발명세서.md
-└── BOOK & MOOD 백엔드 개발 가이드.md
+├── android-client/                 # TEMI 로봇 전용 안드로이드 클라이언트 앱 (Kotlin / Compose)
+│   ├── app/                        # 메인 안드로이드 애플리케이션 모듈
+│   │   ├── src/main/java/com/bookmood/app/
+│   │   │   ├── MainActivity.kt     # 앱 진입점 및 풀스크린 키오스크 모드
+│   │   │   ├── BookMoodScreens.kt  # 화면 라우터
+│   │   │   ├── BookMoodViewModel.kt# UI 상태 관리 및 API 통신 연동
+│   │   │   ├── BookMoodMedia.kt    # 표지 다운로더 & ZXing QR 생성기
+│   │   │   ├── PrototypeLayout.kt  # 피그마 디자인 시스템 (Palette, 컴포넌트)
+│   │   │   └── screens/            # 11개 Compose 화면 (S00 시작 ~ S10 종료)
+│   ├── network/                    # 백엔드 통신 및 테미 제어
+│   │   ├── BookMoodModels.kt       # 요청/응답 DTO
+│   │   ├── BookMoodApiService.kt   # Retrofit2 API 인터페이스
+│   │   ├── BookMoodClient.kt       # 네트워크 호출 및 오류 파싱 래퍼
+│   │   └── TemiNavigationController.kt # TEMI V1 로봇 자율주행·복귀 제어기
+│   └── gradlew                     # Gradle 빌드 래퍼 스크립트
+├── docs/                           # 프로젝트 개발 기획서 및 명세서 모음
+│   ├── BOOK & MOOD 최종기획서 .md
+│   ├── BOOK & MOOD 개발명세서.md
+│   ├── 개발명세서_개정안.md
+│   ├── BOOK & MOOD 백엔드 개발 가이드.md
+│   └── Android(Kotlin) 백엔드 API 연동 가이드.md
+└── 도서표지/                       # 원본 도서 표지 이미지 자산
 ```
 
 ---
 
-## 5. 백엔드 실행 및 테스트 방법
+## 5. 실행 및 테스트 방법
+
+### 5.1 백엔드 API 서버 실행
 
 ```bash
 # 1. 백엔드 폴더 이동 및 패키지 설치
 cd backend
 pip3 install -r requirements.txt
 
-# 2. 샘플 도서(48권)·음악(6개) CSV를 SQLite DB로 적재
+# 2. 공식 도서(48권)·음악(7곡) CSV를 SQLite DB로 적재
 python3 scripts/seed_db.py
 
 # 3. API 서버 실행 (Swagger 문서: http://127.0.0.1:8000/docs)
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-# 4. 자동 테스트 실행
-pytest
+# 4. 전체 자동 테스트 실행 (단위 + 안드로이드 E2E 시뮬레이션)
+pytest -v
 ```
 
-### 실제 LLM API 연결 시 (선택)
-`backend/.env.example`을 복사해 `backend/.env`를 생성한 뒤 API 키를 입력하면 코드 수정 없이 실제 모델로 전환됩니다.
+### 5.2 안드로이드 클라이언트 앱 빌드 및 실행
+
+* **Android Studio 이용 시:**
+  1. `Android Studio` 실행 후 `android-client` 폴더를 프로젝트로 오픈합니다.
+  2. 태블릿 가상 기기(에뮬레이터) 또는 연결된 TEMI 기기를 선택하고 **Run(▶)**을 클릭합니다.
+  3. 에뮬레이터 환경에서는 `http://10.0.2.2:8000/`로 로컬 백엔드 서버와 자동 통신합니다.
+
+* **CLI 빌드 시:**
+  ```bash
+  # 디버그 APK 빌드 (빌드 파일: android-client/app/build/outputs/apk/debug/app-debug.apk)
+  ./android-client/gradlew -p android-client assembleDebug
+  ```
+
+### 5.3 실제 LLM API 연결 시 (선택)
+`backend/.env.example`을 복사해 `backend/.env`를 생성한 뒤 Gemini API 키를 입력하면 실제 모델로 전환됩니다.
 
 ```env
 LLM_PROVIDER=gemini          # mock | openai | gemini
