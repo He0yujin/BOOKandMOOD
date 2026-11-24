@@ -1,6 +1,7 @@
 package com.bookmood.app.network
 
 import com.google.gson.Gson
+import kotlinx.coroutines.CancellationException
 import okhttp3.OkHttpClient
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -103,6 +104,8 @@ object BookMoodClient {
                     ApiResult.Error("HTTP_${response.code()}", "요청 처리에 실패했습니다.")
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             ApiResult.Error("NETWORK_ERROR", e.localizedMessage ?: "서버에 연결할 수 없습니다.")
         }
