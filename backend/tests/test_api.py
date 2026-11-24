@@ -23,8 +23,8 @@ from scripts.seed_db import load_books_from_csv, load_musics_from_csv
 @pytest.fixture()
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     test_db = Database(tmp_path / "test_bookmood.db")
-    books = load_books_from_csv(BACKEND_DIR / "data" / "sample_books_48.csv")
-    musics = load_musics_from_csv(BACKEND_DIR / "data" / "sample_musics.csv")
+    books = load_books_from_csv(BACKEND_DIR / "data" / "books.csv")
+    musics = load_musics_from_csv(BACKEND_DIR / "data" / "musics.csv")
     test_db.upsert_books(books)
     test_db.upsert_musics(musics)
     monkeypatch.setattr(main_module, "db", test_db)
@@ -42,7 +42,7 @@ def test_health_check(client: TestClient) -> None:
     body = res.json()
     assert body["status"] == "ok"
     assert body["active_books"] == 48
-    assert body["active_musics"] == 6
+    assert body["active_musics"] == 7
 
 
 def test_recommendations_and_rerecommend(client: TestClient) -> None:

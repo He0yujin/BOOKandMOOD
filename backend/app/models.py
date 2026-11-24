@@ -150,6 +150,7 @@ class Music:
             "style": self.style,
             "mood_tags": list(self.mood_tags),
             "youtube_url": self.youtube_url,
+            "qr_path": f"/static/qr/{self.music_id}.png",
         }
 
 

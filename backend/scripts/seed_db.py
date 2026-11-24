@@ -101,12 +101,12 @@ def main() -> None:
     parser.add_argument(
         "--books-csv",
         type=Path,
-        default=BACKEND_DIR / "data" / "sample_books_48.csv",
+        default=BACKEND_DIR / "data" / "books.csv",
     )
     parser.add_argument(
         "--musics-csv",
         type=Path,
-        default=BACKEND_DIR / "data" / "sample_musics.csv",
+        default=BACKEND_DIR / "data" / "musics.csv",
     )
     parser.add_argument(
         "--dev-activate",

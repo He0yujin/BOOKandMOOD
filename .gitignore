@@ -18,3 +18,9 @@ local.properties
 # OS
 .DS_Store
 
+# Temporary working assets (canonical in backend/data/ and backend/static/)
+도서표지_*/
+음악 큐알/
+도서DB_*.csv
+rest(*).csv
+

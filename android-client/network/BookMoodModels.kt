@@ -68,7 +68,8 @@ data class MusicDto(
     @SerializedName("title") val title: String,
     @SerializedName("style") val style: String,
     @SerializedName("mood_tags") val moodTags: List<String>,
-    @SerializedName("youtube_url") val youtubeUrl: String
+    @SerializedName("youtube_url") val youtubeUrl: String,
+    @SerializedName("qr_path") val qrPath: String = ""
 )
 
 data class BookDetailResponseDto(

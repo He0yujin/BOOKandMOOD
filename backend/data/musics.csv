@@ -1,0 +1,8 @@
+﻿music_id,title,mood_tags,style,youtube_url,is_instrumental_verified,url_verified,active,priority
+M001,잔잔한 피아노,"[""위로"", ""따뜻함"", ""평온함""]",피아노,https://www.youtube.com/watch?v=FS93cEWcwQA,true,true,true,10
+M002,따뜻한 어쿠스틱 기타,"[""따뜻함"", ""평온함"", ""희망""]",어쿠스틱 기타,https://www.youtube.com/watch?v=oqMizVk_U5M,true,true,true,20
+M003,산뜻한 카페 재즈,"[""유쾌함"", ""활력"", ""설렘""]",재즈,https://www.youtube.com/watch?v=Y4anm6w0uiA,true,true,true,30
+M004,밝은 로파이 비트,"[""희망"", ""활력"", ""설렘""]",로파이,https://www.youtube.com/watch?v=BfPZp30enLc,true,true,true,40
+M005,비 오는 날 첼로·피아노,"[""위로"", ""쓸쓸함"", ""평온함""]",클래식,https://www.youtube.com/watch?v=6h69W_Ymu8Q,true,true,true,50
+M006,미스터리·시네마틱 연주곡,"[""긴장감"", ""신비로움""]",시네마틱,https://www.youtube.com/watch?v=Q63CPrF57E4,true,true,true,60
+M007,몽환적 앰비언트,"[""평온함"", ""신비로움"", ""설렘""]",앰비언트,https://www.youtube.com/watch?v=nWG7RyF08Fw,true,true,true,70
